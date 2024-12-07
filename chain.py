@@ -1,6 +1,7 @@
 from langgraph.graph import MessagesState, StateGraph, START, END
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
+from langgraph.prebuilt import ToolNode, tools_condition
 from dotenv import load_dotenv
 import os
 
@@ -52,9 +53,10 @@ builder = StateGraph(MessagesState)
 
 # register our node
 builder.add_node("tool_calling_llm", tool_calling_node)
-
+builder.add_node("tools", ToolNode([multiply]))
 # add our flow logic or edges
 builder.add_edge(START, "tool_calling_llm")
+builder.add_conditional_edges("tool_calling_llm", tools_condition)
 builder.add_edge("tool_calling_llm", END)
 
 # compile our graph
@@ -66,4 +68,5 @@ graph = builder.compile()
 # print("graph_json", graph.get_graph().to_json())
 initial_message = HumanMessage(content="Hi", name="Thomas")
 result = graph.invoke({"messages": [initial_message]})
-print(result)
+for message in result["messages"]:
+    message.pretty_print()
