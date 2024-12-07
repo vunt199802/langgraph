@@ -4,8 +4,6 @@ from typing import Literal
 
 from langgraph.graph import StateGraph, START, END
 
-from IPython.display import Image, display
-
 
 class State(TypedDict):
     graph_state: str
@@ -13,17 +11,17 @@ class State(TypedDict):
 
 def node_1(state):
     print("______node_1_______")
-    return {"graph_state": state["graph_state"] + "I am"}
+    return {"graph_state": state["graph_state"] + " I am"}
 
 
 def node_2(state):
     print("______node_2_______")
-    return {"graph_state": state["graph_state"] + "Happy!"}
+    return {"graph_state": state["graph_state"] + " Happy!"}
 
 
 def node_3(state):
     print("_____node_3_____")
-    return {"graph_state": state["graph_state"] + "Sad!"}
+    return {"graph_state": state["graph_state"] + " Sad!"}
 
 
 def decide_mood(state) -> Literal["node_2", "node_3"]:
@@ -60,3 +58,5 @@ graph = builder.compile()
 
 print("nodes", graph.get_graph().nodes)
 print("edges", graph.get_graph().edges)
+final_result = graph.invoke({"graph_state": "Hi, this is Thomas."})
+print(final_result)
