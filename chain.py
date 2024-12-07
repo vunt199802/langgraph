@@ -1,6 +1,6 @@
 from langgraph.graph import MessagesState, StateGraph, START, END
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.prebuilt import ToolNode, tools_condition
 from dotenv import load_dotenv
 import os
@@ -50,7 +50,12 @@ def subtract(a: int, b: int) -> int:
     return a - b
 
 
+# define a system message or a prompt
+sys_message = SystemMessage(
+    content="You are a helpful assistant tasked with performing arithmetic on a set of inputs."
+)
 #  bind our external tool to our llm
+
 
 llm_with_tools = llm.bind_tools([multiply, subtract, add])
 
@@ -64,7 +69,14 @@ llm_with_tools = llm.bind_tools([multiply, subtract, add])
 
 # define our tool calling node
 def tool_calling_node(state: MessagesState):
-    return {"messages": [llm_with_tools.invoke(state["messages"])]}
+    return {"messages": [llm_with_tools.invoke([sys_message] + state["messages"])]}
+
+
+# define our Math assistant chatbot node
+
+
+def math_assistant(state: MessagesState):
+    return {"messages": [llm_with_tools.invoke([sys_message] + state["messages"])]}
 
 
 # build the graph
@@ -72,12 +84,15 @@ def tool_calling_node(state: MessagesState):
 builder = StateGraph(MessagesState)
 
 # register our node
-builder.add_node("tool_calling_llm", tool_calling_node)
+builder.add_node("math_assistant", tool_calling_node)
 builder.add_node("tools", ToolNode([multiply, add, subtract]))
 # add our flow logic or edges
-builder.add_edge(START, "tool_calling_llm")
-builder.add_conditional_edges("tool_calling_llm", tools_condition)
-builder.add_edge("tool_calling_llm", END)
+builder.add_edge(START, "math_assistant")
+
+# Use in the conditional_edge to route to the ToolNode if the last message
+# has tool calls. Otherwise, route to the end.
+builder.add_conditional_edges("math_assistant", tools_condition)
+builder.add_edge("tools", "math_assistant")
 
 # compile our graph
 graph = builder.compile()
@@ -87,7 +102,7 @@ graph = builder.compile()
 # print("edges", graph.get_graph().edges)
 # print("graph_json", graph.get_graph().to_json())
 initial_message = HumanMessage(
-    content="Hi, I have 4 apples, if i game my friend lielina 2 apples, how many apples will i have",
+    content="Hi, Add 3 and 4. Multiply the output by 2. Divide the output by 5",
     name="Thomas",
 )
 result = graph.invoke({"messages": [initial_message]})
