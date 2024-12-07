@@ -30,9 +30,29 @@ def multiply(a: int, b: int) -> int:
     return a * b
 
 
+def add(a: int, b: int) -> int:
+    """Add a and b
+    Args:
+        a:first int
+        b:second int
+
+    """
+    return a + b
+
+
+def subtract(a: int, b: int) -> int:
+    """subtract b from a
+    Args:
+        a:first int
+        b:second int
+
+    """
+    return a - b
+
+
 #  bind our external tool to our llm
 
-llm_with_tools = llm.bind_tools([multiply])
+llm_with_tools = llm.bind_tools([multiply, subtract, add])
 
 
 # tool_call = llm_with_tools.invoke(
@@ -53,7 +73,7 @@ builder = StateGraph(MessagesState)
 
 # register our node
 builder.add_node("tool_calling_llm", tool_calling_node)
-builder.add_node("tools", ToolNode([multiply]))
+builder.add_node("tools", ToolNode([multiply, add, subtract]))
 # add our flow logic or edges
 builder.add_edge(START, "tool_calling_llm")
 builder.add_conditional_edges("tool_calling_llm", tools_condition)
@@ -66,7 +86,10 @@ graph = builder.compile()
 # print("nodes", graph.get_graph().nodes)
 # print("edges", graph.get_graph().edges)
 # print("graph_json", graph.get_graph().to_json())
-initial_message = HumanMessage(content="Hi", name="Thomas")
+initial_message = HumanMessage(
+    content="Hi, I have 4 apples, if i game my friend lielina 2 apples, how many apples will i have",
+    name="Thomas",
+)
 result = graph.invoke({"messages": [initial_message]})
 for message in result["messages"]:
     message.pretty_print()
