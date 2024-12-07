@@ -1,6 +1,7 @@
 from langgraph.graph import MessagesState, StateGraph, START, END
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode, tools_condition
 from dotenv import load_dotenv
 import os
@@ -93,18 +94,26 @@ builder.add_edge(START, "math_assistant")
 # has tool calls. Otherwise, route to the end.
 builder.add_conditional_edges("math_assistant", tools_condition)
 builder.add_edge("tools", "math_assistant")
+# create a memory saver
 
+memory = MemorySaver()
 # compile our graph
-graph = builder.compile()
+graph = builder.compile(checkpointer=memory)
 
 
 # print("nodes", graph.get_graph().nodes)
 # print("edges", graph.get_graph().edges)
 # print("graph_json", graph.get_graph().to_json())
 initial_message = HumanMessage(
-    content="Hi, Add 3 and 4. Multiply the output by 2. Divide the output by 5",
+    content="Hi, Add 3 and 4. Multiply the output by 2. minus 5 from the result",
     name="Thomas",
 )
-result = graph.invoke({"messages": [initial_message]})
+config = {"configurable": {"thread_id": "1"}}
+result = graph.invoke({"messages": [initial_message]}, config=config)
+for message in result["messages"]:
+    message.pretty_print()
+
+message_2 = HumanMessage(content="multiply that by 2")
+result = graph.invoke({"messages": [message_2]}, config=config)
 for message in result["messages"]:
     message.pretty_print()
