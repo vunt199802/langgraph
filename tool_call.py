@@ -1,6 +1,6 @@
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import MessagesState, StateGraph, END, START
 from langgraph.prebuilt import tools_condition, ToolNode
 
@@ -17,6 +17,10 @@ api_key = os.getenv("OPENAI_API_KEY")
 
 # define our chat model
 llm = ChatOpenAI(api_key=api_key, model="gpt-4o-mini")
+
+system_message = SystemMessage(
+    content="You are an arthimethic math expert and your job is to perform arthimetic operations"
+)
 
 
 # define our tools
@@ -74,7 +78,7 @@ llm_with_tools = llm.bind_tools(tools, parallel_tool_calls=False)
 
 
 def chatbot(state: State):
-    return {"messages": llm_with_tools.invoke(state["messages"])}
+    return {"messages": llm_with_tools.invoke([system_message] + state["messages"])}
 
 
 # start building our graph
@@ -95,11 +99,7 @@ builder.add_edge("tools", "chatbot")
 
 graph = builder.compile()
 
-messages = [
-    SystemMessage(
-        content="You are an arthimethic math expert and your job is to perform arthimetic operations"
-    )
-]
+messages = []
 
 messages.append(
     HumanMessage(
@@ -109,7 +109,7 @@ messages.append(
 )
 output = graph.invoke({"messages": messages})
 
-# for m in output["messages"]:
-#     m.pretty_print()
+for m in output["messages"]:
+    m.pretty_print()
 
-print(output["messages"][-1])
+# print(output["messages"][-1])
