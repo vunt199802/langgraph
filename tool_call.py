@@ -18,6 +18,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 # define our chat model
 llm = ChatOpenAI(api_key=api_key, model="gpt-4o-mini")
 
+# define a system message
 system_message = SystemMessage(
     content="You are an arthimethic math expert and your job is to perform arthimetic operations"
 )
