@@ -1,8 +1,10 @@
 from langchain_core.messages import HumanMessage, SystemMessage, RemoveMessage
 from langgraph.graph import MessagesState, StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
+import sqlite3
 
 load_dotenv()
 import os
@@ -74,9 +76,15 @@ builder.add_conditional_edges("chatbot", should_summarize)
 builder.add_edge("summarize_conversation", END)
 
 
-# add transient(in-memory) checkpointer
+# # add transient(in-memory) checkpointer
 
-memory = MemorySaver()
+# memory = MemorySaver()
+
+# add sqlite external memory to our chatbot for persistence
+
+db_path = "example.db"
+conn = sqlite3.connect(db_path, check_same_thread=False)
+memory = SqliteSaver(conn)
 
 config = {"configurable": {"thread_id": "1"}}
 
@@ -105,3 +113,6 @@ for m in output["messages"][-1:]:
     m.pretty_print()
 
 print("summary", graph.get_state(config).values.get("summary", ""))
+
+graph_state = graph.get_state(config)
+print(graph_state)
